@@ -1,47 +1,68 @@
-# CanonicalHash
+# 🔐 CanonicalHash
 
-> **RFC 8785 JSON Canonicalization + EIP-712 attestation for AI agents.**
-> Deterministic hash of any JSON payload — byte-for-byte identical across sessions, languages, and runtimes.
+**RFC 8785 JSON Canonicalization + EIP-712 attestation for AI agents.** Deterministic hash of any JSON payload — byte-for-byte identical across sessions, languages, and runtimes.
 
-[![PayAPI Verified](https://img.shields.io/badge/PayAPI-settlement--verified-blue)](https://payapi.market/api/canonicalhash-json-canonicalization-api)
-[![x402 v2](https://img.shields.io/badge/x402-v2-8A2BE2)](https://x402.org)
-[![RFC 8785](https://img.shields.io/badge/RFC-8785-informational)](https://www.rfc-editor.org/rfc/rfc8785)
-[![EIP-712](https://img.shields.io/badge/EIP--712-signed-purple)](https://eips.ethereum.org/EIPS/eip-712)
-[![Base](https://img.shields.io/badge/Base-USDC-0052FF)](https://base.org)
-[![Solana](https://img.shields.io/badge/Solana-USDC-14F195)](https://solana.com)
-[![License: MIT](https://img.shields.io/badge/docs-MIT-yellow.svg)](#license)
+[![PayAPI Verified](https://img.shields.io/badge/PayAPI-settlement--verified-blue)](https://payapi.market/api/canonicalhash-json-canonicalization-api) [![x402 v2](https://img.shields.io/badge/x402-v2-8A2BE2)](https://x402.org) [![RFC 8785](https://img.shields.io/badge/RFC-8785-informational)](https://www.rfc-editor.org/rfc/rfc8785) [![EIP-712](https://img.shields.io/badge/EIP--712-signed-purple)](https://eips.ethereum.org/EIPS/eip-712) [![Base](https://img.shields.io/badge/Base-USDC-0052FF)](https://base.org) [![Solana](https://img.shields.io/badge/Solana-USDC-14F195)](https://solana.com) [![License: MIT](https://img.shields.io/badge/docs-MIT-yellow.svg)](#license)
 
-**Live endpoint:**  
-`https://canonicalhash-production.up.railway.app/v1/canonicalize`
-
-**Price:** `$0.002 USDC` per call · `$0.01` for batch (up to 1000 items)  
-**Protocol:** x402 v2 · Base (`eip155:8453`) or Solana  
-**Latency:** <50ms (Tier 1) / ~2s (Tier 2 with attestation)
+[The Problem](#-what-this-solves) · [Quick Call](#-quick-call) · [Why Pay For This](#-why-agents-pay-for-this) · [Endpoints](#-endpoints) · [Attestation](#-attestation-format) · [Verify](#-how-to-verify)
 
 ---
 
-## What this solves
+## 🔗 Live Endpoint
 
-JSON is not deterministic across runtimes:
+```
+https://canonicalhash-production.up.railway.app/v1/canonicalize
+```
 
-- `{"a":1,"b":2}` and `{"b":2,"a":1}` are semantically identical but hash differently
-- Python, Go, Node, and Rust serialize floats differently
-- Unicode normalization produces different bytes for the same visible string
-- Whitespace and number precision vary by language and library
-
-This breaks:
-
-- **Idempotency keys** for payments — duplicate requests slip through
-- **Cache keys** — identical payloads miss the cache
-- **Cross-runtime deduplication** — Python and Go disagree on the hash
-- **Multi-agent coordination** — Agent A and B can't verify they mean the same data
-- **Audit trails** — no way to prove what was hashed when
-
-**CanonicalHash fixes this by returning the RFC 8785 canonical bytes and a stable SHA-256/512 digest, plus an EIP-712 signed attestation.**
+|  |  |
+| --- | --- |
+| **Price** | `$0.002 USDC` per call · `$0.01` for batch (up to 1000 items) |
+| **Protocol** | x402 v2 · Base (`eip155:8453`) or Solana |
+| **Latency** | \<50ms (Tier 1) / \~2s (Tier 2 with attestation) |
 
 ---
 
-## Quick call
+## ❗ What This Solves
+
+JSON is **not** deterministic across runtimes:
+
+```mermaid
+flowchart LR
+    A["{'a':1,'b':2}"] -->|Python json.dumps| B[One byte order]
+    A -->|Go json.Marshal| C[Different byte order]
+    A -->|Node JSON.stringify| D[Different float precision]
+    B & C & D -->|hashed independently| X["❌ Three different hashes
+for the SAME data"]
+
+    style X fill:#3a1414,stroke:#e06c75,color:#fff
+```
+
+This breaks real systems:
+
+| Breaks | How |
+| --- | --- |
+| 🔑 **Idempotency keys** for payments | Duplicate requests slip through |
+| 🗄️ **Cache keys** | Identical payloads miss the cache |
+| 🔁 **Cross-runtime deduplication** | Python and Go disagree on the hash |
+| 🤝 **Multi-agent coordination** | Agent A and B can't verify they mean the same data |
+| 📋 **Audit trails** | No way to prove what was hashed, or when |
+
+**CanonicalHash fixes this** by returning the RFC 8785 canonical bytes and a stable SHA-256/512 digest — plus an EIP-712 signed attestation.
+
+```mermaid
+flowchart LR
+    A["{'a':1,'b':2}"] -->|Python| E[RFC 8785 canonicalizer]
+    A2["{'b':2,'a':1}"] -->|Go| E
+    A3["{ a : 1, b : 2 }"] -->|Node| E
+    E --> F["✅ One canonical form
+One hash, every time"]
+
+    style F fill:#122b1a,stroke:#3fb950,color:#fff
+```
+
+---
+
+## 🚀 Quick Call
 
 ```bash
 # 1. Call unpaid — receive a 402 challenge
@@ -54,9 +75,11 @@ curl -X POST https://canonicalhash-production.up.railway.app/v1/canonicalize \
   -H 'Content-Type: application/json' \
   -H 'PAYMENT-SIGNATURE: <your-signed-payment>' \
   -d '{"payload": {"b": 2, "a": 1}, "algorithm": "sha256"}'
-Response:
+```
 
-json
+**Response:**
+
+```json
 {
   "success": true,
   "canonical": "{\"a\":1,\"b\":2}",
@@ -79,69 +102,97 @@ json
     "verify_at": "https://canonicalhash-production.up.railway.app/.well-known/pubkey.json"
   }
 }
+```
+
+**Call sequence:**
+
+```mermaid
+sequenceDiagram
+    participant Agent as AI Agent
+    participant API as CanonicalHash
+    participant Chain as Blockchain
+
+    Agent->>API: POST /v1/canonicalize {payload}
+    API-->>Agent: 402 {price, payTo, networks}
+    Agent->>Chain: Send 0.002 USDC
+    Chain-->>Agent: tx confirmed
+    Agent->>API: POST + PAYMENT-SIGNATURE
+    API->>Chain: verify via PayAI facilitator
+    Chain-->>API: valid ✅
+    API-->>Agent: 200 {canonical, hash, attestation}
+```
 
 ---
 
-## Why agents pay for this
+## 🧠 Why Agents Pay For This
 
-A capable LLM can canonicalize JSON locally. So why pay $0.002 per call?
+A capable LLM can canonicalize JSON locally. So why pay `$0.002` per call?
 
-**Because the moat is not the hash — it's the receipt.**
+> **Because the moat is not the hash — it's the receipt.**
 
-The `attestation` field is an **EIP-712 signature** over the hash + timestamp, signed by a stable address you can verify against a published public key. This makes CanonicalHash a **trust primitive**, not a utility:
+The `attestation` field is an **EIP-712 signature** over the hash + timestamp, signed by a stable address you can verify against a published public key. This makes CanonicalHash a **trust primitive**, not a utility.
 
 | Use case | Why local computation fails |
-|---|---|
-| **Cross-org agent handoffs** | Agent A gives data to Agent B. B needs proof the data came from A, not a compromised middleman. |
-| **Dispute resolution** | Two agents disagree about what was agreed. An independent timestamped hash settles it. |
-| **Regulatory audit** | An auditor wants proof that a specific payload existed at a specific time — signed by a third party, not the agent's own key. |
-| **Multi-agent coordination** | Multiple agents in different orgs need the *same* hash for the *same* payload. |
+| --- | --- |
+| 🏢 **Cross-org agent handoffs** | Agent A gives data to Agent B. B needs proof the data came from A, not a compromised middleman. |
+| ⚖️ **Dispute resolution** | Two agents disagree about what was agreed. An independent timestamped hash settles it. |
+| 🔎 **Regulatory audit** | An auditor wants proof a specific payload existed at a specific time — signed by a third party, not the agent's own key. |
+| 🤖 **Multi-agent coordination** | Multiple agents in different orgs need the *same* hash for the *same* payload. |
 
-The IETF SCITT standard explicitly requires attestations be held by "a party other than the agent's operator." **That's the gap CanonicalHash fills.**
+The **IETF SCITT** standard explicitly requires attestations be held by "a party other than the agent's operator." **That's the gap CanonicalHash fills.**
 
 ---
 
-## Endpoints
+## 📡 Endpoints
 
 | Route | Method | Price | Purpose |
-|---|---|---|---|
-| `/v1/canonicalize` | POST | $0.002 | Canonicalize one payload + attestation |
-| `/v1/canonicalize` | GET / HEAD / DELETE | — | Quote (returns 402 challenge) |
-| `/v1/canonicalize/batch` | POST | $0.01 | Up to 1000 payloads in one call |
-| `/.well-known/pubkey.json` | GET | free | EIP-712 signer address + verify instructions |
-| `/openapi.json` | GET | free | OpenAPI 3.1.0 spec |
-| `/.well-known/x402.json` | GET | free | x402 discovery manifest |
-| `/llms.txt` | GET | free | Agent-readable service manifest |
-| `/health` | GET | free | Uptime check |
+| --- | --- | --- | --- |
+| `/v1/canonicalize` | `POST` | `$0.002` | Canonicalize one payload + attestation |
+| `/v1/canonicalize` | `GET` / `HEAD` / `DELETE` | — | Quote (returns 402 challenge) |
+| `/v1/canonicalize/batch` | `POST` | `$0.01` | Up to 1000 payloads in one call |
+| `/.well-known/pubkey.json` | `GET` | free | EIP-712 signer address + verify instructions |
+| `/openapi.json` | `GET` | free | OpenAPI 3.1.0 spec |
+| `/.well-known/x402.json` | `GET` | free | x402 discovery manifest |
+| `/llms.txt` | `GET` | free | Agent-readable service manifest |
+| `/health` | `GET` | free | Uptime check |
 
 ---
 
-## Request (single)
+## 📨 Request (single)
 
-    POST /v1/canonicalize
-    Content-Type: application/json
+```
+POST /v1/canonicalize
+Content-Type: application/json
+```
 
 ```json
 {
   "payload": { "b": 2, "a": 1 },
   "algorithm": "sha256"
 }
-Field	Type	Required	Description
-payload	any	✅	The JSON value to canonicalize
-algorithm	string	—	"sha256" (default) or "sha512"
-Constraints:
+```
 
-payload must be valid JSON (any value: object, array, string, number, boolean, null)
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `payload` | any | ✅ | The JSON value to canonicalize |
+| `algorithm` | string | — | `"sha256"` (default) or `"sha512"` |
 
-NaN and Infinity are rejected
+**Constraints**
 
-Unicode is preserved as-is (RFC 8785 does not normalize)
+- `payload` must be valid JSON (any value: object, array, string, number, boolean, null)
+- `NaN` and `Infinity` are rejected
+- Unicode is preserved as-is (RFC 8785 does not normalize)
 
-Request (batch)
+---
+
+## 📦 Request (batch)
+
+```
 POST /v1/canonicalize/batch
 Content-Type: application/json
+```
 
-json
+```json
 {
   "payloads": [
     { "user_id": 1, "amount": 10 },
@@ -149,11 +200,13 @@ json
   ],
   "algorithm": "sha256"
 }
-Up to 1000 payloads per call for **$0.01 flat** ($0.00001 per item).
+```
 
-Batch response:
+Up to **1000 payloads** per call for a **flat `$0.01`** (`$0.00001` per item).
 
-json
+**Batch response:**
+
+```json
 {
   "success": true,
   "count": 2,
@@ -163,13 +216,18 @@ json
     { "index": 1, "canonical": "...", "hash": "..." }
   ],
   "combined_hash": "...",
-  "attestation": { ... },
+  "attestation": { "...": "..." },
   "payment": { "settled": true, "txHash": "0x..." }
 }
-Attestation format
+```
+
+---
+
+## 🖋️ Attestation Format
+
 Every successful single or batch response includes an EIP-712 signed attestation.
 
-json
+```json
 {
   "issuer": "canonicalhash-production.up.railway.app",
   "signer": "0x0326f9783c9C9b9De8b9dC63cCCefDC75A95C7cD",
@@ -183,10 +241,15 @@ json
   "signature": "0x...",
   "verify_at": "https://canonicalhash-production.up.railway.app/.well-known/pubkey.json"
 }
-The signature is over { hash, algorithm, issuedAt }. Any standard EIP-712 verifier can recover the signer — this has been verified with both viem and ethers.
+```
 
-How to verify
-javascript
+The signature is over `{ hash, algorithm, issuedAt }`. Any standard EIP-712 verifier can recover the signer — this has been verified with both **viem** and **ethers**.
+
+---
+
+## ✅ How to Verify
+
+```javascript
 import { recoverTypedDataAddress } from "viem"
 
 const recovered = await recoverTypedDataAddress({
@@ -208,19 +271,24 @@ const recovered = await recoverTypedDataAddress({
 })
 
 // recovered === attestation.signer === pubkey.address
-The signing address is published at /.well-known/pubkey.json.
+```
 
-Discovery
-Agents can discover this service via:
+The signing address is published at `/.well-known/pubkey.json`.
 
-Interface	URL
-OpenAPI	https://canonicalhash-production.up.railway.app/openapi.json
-x402 well-known	https://canonicalhash-production.up.railway.app/.well-known/x402.json
-llms.txt	https://canonicalhash-production.up.railway.app/llms.txt
-Signer pubkey	https://canonicalhash-production.up.railway.app/.well-known/pubkey.json
-PayAPI MCP server — paste into Claude Desktop or Cursor:
+---
 
-json
+## 🔍 Discovery
+
+| Interface | URL |
+| --- | --- |
+| OpenAPI | `https://canonicalhash-production.up.railway.app/openapi.json` |
+| x402 well-known | `https://canonicalhash-production.up.railway.app/.well-known/x402.json` |
+| llms.txt | `https://canonicalhash-production.up.railway.app/llms.txt` |
+| Signer pubkey | `https://canonicalhash-production.up.railway.app/.well-known/pubkey.json` |
+
+**PayAPI MCP server** — paste into Claude Desktop or Cursor:
+
+```json
 {
   "mcpServers": {
     "payapi": {
@@ -228,35 +296,43 @@ json
     }
   }
 }
-Verified on PayAPI Market
-This service is listed on PayAPI Market with a settlement-verified badge — the platform paid this endpoint from its own wallet and confirmed real product was returned.
+```
 
-🔗 CanonicalHash — JSON Canonicalization API
+---
 
-Settlement transaction:
-0x78c4904db8263fd8ceac4d715a824ff7b9c087d69a9f8e15f7918280c6e3157a
-Block 52608420 · $0.002 to 0xfBF6eb2d6eF4D4a2F528aDEF116d641CA5E89681
+## ✅ Verified on PayAPI Market
 
-Payment
-Accepted: USDC on Base (eip155:8453) or Solana
+This service is listed on **PayAPI Market** with a **settlement-verified** badge — the platform paid this endpoint from its own wallet and confirmed real product was returned.
 
-Base payTo: 0xfBF6eb2d6eF4D4a2F528aDEF116d641CA5E89681
-Solana payTo: 8EBMNvPdbSxjncYKDc8kXwLQkqGeY8L94CWuikGuRQDp
+🔗 [CanonicalHash — JSON Canonicalization API](https://payapi.market/api/canonicalhash-json-canonicalization-api)
 
-Facilitator: PayAI (https://facilitator.payai.network)
+> **Settlement transaction:** `0x78c4904db8263fd8ceac4d715a824ff7b9c087d69a9f8e15f7918280c6e3157a` Block `52608420` · `$0.002` to `0xfBF6eb2d6eF4D4a2F528aDEF116d641CA5E89681`
 
-Settlement: Immediate on success. The tx hash is included in the response. Failed requests are not charged.
+---
 
-Source code
+## 💳 Payment
+
+|  |  |
+| --- | --- |
+| **Accepted assets** | USDC on Base (`eip155:8453`) or Solana |
+| **Base `payTo`** | `0xfBF6eb2d6eF4D4a2F528aDEF116d641CA5E89681` |
+| **Solana `payTo`** | `8EBMNvPdbSxjncYKDc8kXwLQkqGeY8L94CWuikGuRQDp` |
+| **Facilitator** | [PayAI](https://facilitator.payai.network) |
+| **Settlement** | Immediate on success. tx hash included in the response. Failed requests are not charged. |
+
+---
+
+## 📦 Source Code
+
 The service implementation is proprietary. This repository contains the public documentation, discovery manifests, and examples — everything agents and buyers need to use the service without exposing the implementation.
 
-License
-Documentation and schema files in this repository: MIT.
-The service implementation: proprietary.
+## 📄 License
 
-Contact
-Issues: open an issue on this repository
+Documentation and schema files in this repository: **MIT**. The service implementation: **proprietary**.
 
-PayAPI listing: https://payapi.market/api/canonicalhash-json-canonicalization-api
+## 🤝 Contact
 
-Built with x402 · settled via PayAI · verified on PayAPI Market
+- **Issues:** open an issue on this repository
+- **PayAPI listing:** [payapi.market/api/canonicalhash-json-canonicalization-api](https://payapi.market/api/canonicalhash-json-canonicalization-api)
+
+Built with **x402** · settled via **PayAI** · verified on **PayAPI Market**
