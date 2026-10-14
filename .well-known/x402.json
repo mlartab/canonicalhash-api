@@ -1,0 +1,41 @@
+{
+  "x402Version": 2,
+  "service": "canonicalhash",
+  "description": "Returns the RFC 8785 canonical bytes and a SHA-256 or SHA-512 digest of any JSON payload, plus an EIP-712 signed attestation verifiable at /.well-known/pubkey.json. Deterministic output: identical input produces identical hash, byte-for-byte, in any runtime. $0.002 per call.",
+  "resources": [
+    {
+      "url": "https://canonicalhash-production.up.railway.app/v1/canonicalize",
+      "method": "POST",
+      "description": "Canonicalize one JSON payload and return its hash + attestation",
+      "mimeType": "application/json",
+      "price": { "amount": "2000", "asset": "USDC", "decimals": 6 },
+      "inputSchema": {
+        "type": "http",
+        "method": "POST",
+        "bodyType": "json",
+        "body": {
+          "payload": { "user_id": 42, "amount": 1.5 },
+          "algorithm": "sha256"
+        }
+      },
+      "outputSchema": {
+        "type": "json",
+        "example": {
+          "success": true,
+          "canonical": "{\"amount\":1.5,\"user_id\":42}",
+          "hash": "hex string",
+          "algorithm": "sha256",
+          "spec": "RFC 8785",
+          "attestation": { "signer": "0x0326...", "signature": "0x..." }
+        }
+      }
+    },
+    {
+      "url": "https://canonicalhash-production.up.railway.app/v1/canonicalize/batch",
+      "method": "POST",
+      "description": "Canonicalize up to 1000 payloads in one call",
+      "mimeType": "application/json",
+      "price": { "amount": "10000", "asset": "USDC", "decimals": 6 }
+    }
+  ]
+}
