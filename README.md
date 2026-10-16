@@ -159,6 +159,7 @@ The **IETF SCITT** standard explicitly requires attestations be held by "a party
 | `/v1/canonicalize` | POST / GET / HEAD / DELETE | $0.002 | Canonicalize one payload + EIP-712 attestation |
 | `/v1/canonicalize/batch` | POST | $0.01 | Up to 1000 payloads, one attestation |
 | `/v1/structure/paid` | POST / GET / HEAD / DELETE | $0.005 | Extract structured JSON from messy text |
+| `/v1/verify` | POST | free | Verify any attestation (EIP-712 signature check) |
 
 ### Admin route (token-gated)
 
@@ -178,6 +179,7 @@ The **IETF SCITT** standard explicitly requires attestations be held by "a party
 | `/.well-known/x402.json` | x402 discovery document |
 | `/.well-known/x402` | Alias (no `.json` extension) for x402 crawlers |
 | `/.well-known/pubkey.json` | EIP-712 signer address + verify instructions |
+| `/v1/verify` | Free attestation verifier (EIP-712 signature recovery) |
 | `/.well-known/agent.json` | Structured agent manifest |
 
 ---
@@ -350,6 +352,35 @@ const recovered = await recoverTypedDataAddress({
 ```
 
 The signing address is published at `/.well-known/pubkey.json`.
+
+---
+
+## 🌐 Verify with an HTTP call
+
+Don't want to install viem? The service exposes a **free, unauthenticated verifier endpoint** that does the same check server-side.
+
+```bash
+curl -X POST https://canonicalhash-production.up.railway.app/v1/verify \
+  -H 'Content-Type: application/json' \
+  -d @your-paid-response.json
+```
+
+Response:
+
+```json
+{
+  "valid": true,
+  "signer": "0x0326f9783c9C9b9De8b9dC63cCCefDC75A95C7cD",
+  "expected_signer": "0x0326f9783c9C9b9De8b9dC63cCCefDC75A95C7cD",
+  "attestation_hash": "60196f74f027a2b2a0c2eb1143dd6cc1a2319c87479a846ed0d140e4bc2403e7",
+  "hash_alg": "sha256",
+  "issued_at_unix": 1792185673,
+  "issuer": "canonicalhash-production.up.railway.app",
+  "scheme": "EIP-712"
+}
+```
+
+You can send either the full paid response or just the `attestation` object. Invalid signatures return `{"valid": false, ...}` -- never a 5xx. Rate limited at 300/min per IP.
 
 ---
 
