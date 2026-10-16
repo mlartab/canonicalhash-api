@@ -2,7 +2,14 @@
 
 **RFC 8785 JSON Canonicalization + EIP-712 attestation for AI agents.** Deterministic hash of any JSON payload — byte-for-byte identical across sessions, languages, and runtimes.
 
-[![PayAPI Verified](https://img.shields.io/badge/PayAPI-settlement--verified-blue)](https://payapi.market/api/canonicalhash-json-canonicalization-api) [![x402 v2](https://img.shields.io/badge/x402-v2-8A2BE2)](https://x402.org) [![RFC 8785](https://img.shields.io/badge/RFC-8785-informational)](https://www.rfc-editor.org/rfc/rfc8785) [![EIP-712](https://img.shields.io/badge/EIP--712-signed-purple)](https://eips.ethereum.org/EIPS/eip-712) [![Base](https://img.shields.io/badge/Base-USDC-0052FF)](https://base.org) [![Solana](https://img.shields.io/badge/Solana-USDC-14F195)](https://solana.com) [![License: MIT](https://img.shields.io/badge/docs-MIT-yellow.svg)](#license)
+[![PayAPI Verified](https://img.shields.io/badge/PayAPI-settlement--verified-blue)](https://payapi.market/api/canonicalhash-json-canonicalization-api)
+[![x402 v2](https://img.shields.io/badge/x402-v2-8A2BE2)](https://x402.org)
+[![RFC 8785](https://img.shields.io/badge/RFC-8785-informational)](https://www.rfc-editor.org/rfc/rfc8785)
+[![EIP-712](https://img.shields.io/badge/EIP--712-signed-purple)](https://eips.ethereum.org/EIPS/eip-712)
+[![Base](https://img.shields.io/badge/Base-USDC-0052FF)](https://base.org)
+[![Solana](https://img.shields.io/badge/Solana-USDC-14F195)](https://solana.com)
+[![License: MIT](https://img.shields.io/badge/docs-MIT-yellow.svg)](#license)
+[![V5](https://img.shields.io/badge/version-V5-green)](https://github.com/mlartab/canonicalhash-api)
 
 [The Problem](#-what-this-solves) · [Quick Call](#-quick-call) · [Why Pay For This](#-why-agents-pay-for-this) · [Endpoints](#-endpoints) · [Attestation](#-attestation-format) · [Verify](#-how-to-verify)
 
@@ -145,16 +152,33 @@ The **IETF SCITT** standard explicitly requires attestations be held by "a party
 
 ## 📡 Endpoints
 
+### Paid routes
+
 | Route | Method | Price | Purpose |
-| --- | --- | --- | --- |
-| `/v1/canonicalize` | `POST` | `$0.002` | Canonicalize one payload + attestation |
-| `/v1/canonicalize` | `GET` / `HEAD` / `DELETE` | — | Quote (returns 402 challenge) |
-| `/v1/canonicalize/batch` | `POST` | `$0.01` | Up to 1000 payloads in one call |
-| `/.well-known/pubkey.json` | `GET` | free | EIP-712 signer address + verify instructions |
-| `/openapi.json` | `GET` | free | OpenAPI 3.1.0 spec |
-| `/.well-known/x402.json` | `GET` | free | x402 discovery manifest |
-| `/llms.txt` | `GET` | free | Agent-readable service manifest |
-| `/health` | `GET` | free | Uptime check |
+|---|---|---|---|
+| `/v1/canonicalize` | POST / GET / HEAD / DELETE | $0.002 | Canonicalize one payload + EIP-712 attestation |
+| `/v1/canonicalize/batch` | POST | $0.01 | Up to 1000 payloads, one attestation |
+| `/v1/structure/paid` | POST / GET / HEAD / DELETE | $0.005 | Extract structured JSON from messy text |
+
+### Admin route (token-gated)
+
+| Route | Method | Auth | Purpose |
+|---|---|---|---|
+| `/v1/structure` | POST | `x-admin-token` header | Same extraction, no payment. Returns 404 without a valid token. |
+
+### Discovery routes (free)
+
+| Route | Purpose |
+|---|---|
+| `/health` | Uptime check |
+| `/metrics` | Prometheus metrics |
+| `/openapi.json` | OpenAPI 3.1.0 spec |
+| `/llms.txt` | Agent-readable service manifest (markdown) |
+| `/agents.json` | Structured agent index (aliases `/.well-known/agent.json`) |
+| `/.well-known/x402.json` | x402 discovery document |
+| `/.well-known/x402` | Alias (no `.json` extension) for x402 crawlers |
+| `/.well-known/pubkey.json` | EIP-712 signer address + verify instructions |
+| `/.well-known/agent.json` | Structured agent manifest |
 
 ---
 
@@ -223,9 +247,61 @@ Up to **1000 payloads** per call for a **flat `$0.01`** (`$0.00001` per item).
 
 ---
 
+Structure extraction (V5)
+POST /v1/structure/paid — extract structured JSON from messy text.
+
+    POST /v1/structure/paid
+    Content-Type: application/json
+
+    {
+      "text": "Contact: Alice Smith, alice@example.com, ACME Corp, $1,250.00 due on 2026-11-01",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "email": {"type": "string"},
+          "company": {"type": "string"},
+          "amount": {"type": "number"},
+          "due_date": {"type": "string"}
+        }
+      }
+    }
+
+Two extraction tiers:
+
+| Tier | Method | Latency | When |
+|------|--------|---------|------|
+| 1 | Deterministic regex | <50ms | Labeled inputs (Contact:, Amount:, Due:) |
+| 2 | Needle 3 model | ~2s | Free-form text without labels |
+
+The response includes a `tier` field (1 or 2) so you know which path was used. If
+extraction fails, you are not charged — the payment signature expires unused after 60 seconds.
+
+Response:
+
+    {
+      "success": true,
+      "structured": {
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "company": "ACME Corp",
+        "amount": 1250,
+        "due_date": "2026-11-01"
+      },
+      "tier": 1,
+      "method": "deterministic",
+      "confidence": 0.98,
+      "attestation": { ... },
+      "payment": { "settled": true, "txHash": "0x..." }
+    }
+
+Use when an agent needs to turn emails, logs, tickets, or notes into structured fields — without writing a prompt or paying a separate LLM.
+
+---
+
 ## 🖋️ Attestation Format
 
-Every successful single or batch response includes an EIP-712 signed attestation.
+Every successful single, batch, or structure response includes an EIP-712 signed attestation.
 
 ```json
 {

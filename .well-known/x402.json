@@ -1,41 +1,80 @@
 {
   "x402Version": 2,
   "service": "canonicalhash",
-  "description": "Returns the RFC 8785 canonical bytes and a SHA-256 or SHA-512 digest of any JSON payload, plus an EIP-712 signed attestation verifiable at /.well-known/pubkey.json. Deterministic output: identical input produces identical hash, byte-for-byte, in any runtime. $0.002 per call.",
+  "description": "Deterministic JSON hashing + structured extraction for AI agents. RFC 8785 canonicalization, SHA-256/512, EIP-712 signed attestations, Needle 3 extraction. x402-native.",
   "resources": [
     {
       "url": "https://canonicalhash-production.up.railway.app/v1/canonicalize",
       "method": "POST",
-      "description": "Canonicalize one JSON payload and return its hash + attestation",
+      "description": "RFC 8785 JSON canonicalization + SHA-256/512 hash + EIP-712 signed attestation. Deterministic: same input produces the same output, byte-for-byte, in any runtime. Use when an agent needs an idempotency key, cache key, dedup hash, or verifiable commitment for a JSON payload.",
       "mimeType": "application/json",
-      "price": { "amount": "2000", "asset": "USDC", "decimals": 6 },
-      "inputSchema": {
-        "type": "http",
-        "method": "POST",
-        "bodyType": "json",
-        "body": {
-          "payload": { "user_id": 42, "amount": 1.5 },
-          "algorithm": "sha256"
-        }
-      },
-      "outputSchema": {
-        "type": "json",
-        "example": {
-          "success": true,
-          "canonical": "{\"amount\":1.5,\"user_id\":42}",
-          "hash": "hex string",
-          "algorithm": "sha256",
-          "spec": "RFC 8785",
-          "attestation": { "signer": "0x0326...", "signature": "0x..." }
-        }
+      "serviceName": "canonicalhash",
+      "tags": [
+        "json",
+        "canonicalization",
+        "rfc8785",
+        "hash",
+        "sha256",
+        "sha512",
+        "eip712",
+        "attestation",
+        "idempotency",
+        "cache-key",
+        "deduplication",
+        "verifiable-commitment"
+      ],
+      "iconUrl": "https://canonicalhash-production.up.railway.app/favicon.ico",
+      "price": {
+        "amount": "2000",
+        "asset": "USDC",
+        "decimals": 6
       }
     },
     {
       "url": "https://canonicalhash-production.up.railway.app/v1/canonicalize/batch",
       "method": "POST",
-      "description": "Canonicalize up to 1000 payloads in one call",
+      "description": "Batch RFC 8785 JSON canonicalization + SHA-256/512 hash for up to 1000 payloads, one attestation, one payment. Use when an agent needs to hash a structured dataset in a single round-trip.",
       "mimeType": "application/json",
-      "price": { "amount": "10000", "asset": "USDC", "decimals": 6 }
+      "serviceName": "canonicalhash",
+      "tags": [
+        "json",
+        "canonicalization",
+        "batch",
+        "bulk-hash",
+        "rfc8785",
+        "sha256",
+        "sha512",
+        "dataset-fingerprint"
+      ],
+      "iconUrl": "https://canonicalhash-production.up.railway.app/favicon.ico",
+      "price": {
+        "amount": "10000",
+        "asset": "USDC",
+        "decimals": 6
+      }
+    },
+    {
+      "url": "https://canonicalhash-production.up.railway.app/v1/structure/paid",
+      "method": "POST",
+      "description": "Extract structured JSON from messy text. Deterministic Tier 1 (regex, exact) first; Needle 3 model fallback for free-form text. Use when an agent needs to turn emails, logs, tickets, or notes into fields it can act on. No charge on extraction failure.",
+      "mimeType": "application/json",
+      "serviceName": "canonicalhash",
+      "tags": [
+        "extraction",
+        "text-to-json",
+        "information-extraction",
+        "structured-data",
+        "needle",
+        "eip712",
+        "attestation",
+        "field-extraction"
+      ],
+      "iconUrl": "https://canonicalhash-production.up.railway.app/favicon.ico",
+      "price": {
+        "amount": "5000",
+        "asset": "USDC",
+        "decimals": 6
+      }
     }
   ]
 }
