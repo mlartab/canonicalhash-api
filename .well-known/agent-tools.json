@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "service": "CanonicalHash",
+  "description": "Deterministic JSON hashing + structured extraction + verifiable action receipts for AI agents.",
+  "base_url": "https://canonicalhash-production.up.railway.app",
+  "auth": "x402",
+  "asset": "USDC",
+  "networks": ["eip155:8453", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"],
+  "signer": "0x0326f9783c9C9b9De8b9dC63cCCefDC75A95C7cD",
+  "pubkey_url": "/.well-known/pubkey.json",
+  "openapi_url": "/openapi.json",
+  "x402_manifest": "/.well-known/x402.json",
+  "llms_txt": "/llms.txt",
+  "verifier": "/v1/verify",
+  "tools": [
+    {
+      "name": "canonicalize_json",
+      "endpoint": "/v1/canonicalize",
+      "method": "POST",
+      "price_usd": 0.002,
+      "description": "RFC 8785 canonicalize any JSON + EIP-712 attestation."
+    },
+    {
+      "name": "canonicalize_batch",
+      "endpoint": "/v1/canonicalize/batch",
+      "method": "POST",
+      "price_usd": 0.01,
+      "description": "Batch up to 1000 payloads, one attestation."
+    },
+    {
+      "name": "extract_structured",
+      "endpoint": "/v1/structure/paid",
+      "method": "POST",
+      "price_usd": 0.005,
+      "description": "Extract structured JSON from messy text (regex + Needle 3)."
+    },
+    {
+      "name": "action_receipt",
+      "endpoint": "/v1/receipt",
+      "method": "POST",
+      "price_usd": 0.001,
+      "description": "Signed receipt binding {action, occurred_at} to a server time."
+    }
+  ]
+}

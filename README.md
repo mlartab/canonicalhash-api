@@ -443,3 +443,23 @@ Documentation and schema files in this repository: **MIT**. The service implemen
 - **PayAPI listing:** [payapi.market/api/canonicalhash-json-canonicalization-api](https://payapi.market/api/canonicalhash-json-canonicalization-api)
 
 Built with **x402** · settled via **PayAI** · verified on **PayAPI Market**
+## Trust & Discovery
+
+Static manifests for x402 trust platforms and agent crawlers:
+
+| File | Purpose |
+|------|---------|
+| [`/.well-known/x402-provider.json`](.well-known/x402-provider.json) | Provider identity + contact — consumed by trust-scoring platforms |
+| [`/.well-known/agent-tools.json`](.well-known/agent-tools.json) | Agent-tool manifest listing all 4 paid routes with prices |
+| [`/.well-known/x402.json`](.well-known/x402.json) | x402 payment manifest (IETF draft) |
+
+Live copies (served by the service itself):
+
+- https://canonicalhash-production.up.railway.app/.well-known/x402-provider.json
+- https://canonicalhash-production.up.railway.app/.well-known/agent-tools.json
+- https://canonicalhash-production.up.railway.app/.well-known/x402.json
+
+Domain verified on [402index.io](https://402index.io) — future endpoint registrations auto-approve.
+
+---
+

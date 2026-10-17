@@ -1,0 +1,10 @@
+{
+  "serviceName": "CanonicalHash",
+  "provider": "CanonicalHash",
+  "contactEmail": "anwarinowac@gmail.com",
+  "supportUrl": "https://github.com/mlartab/canonicalhash-api",
+  "docsUrl": "https://canonicalhash-production.up.railway.app/openapi.json",
+  "providerUrl": "https://canonicalhash-production.up.railway.app",
+  "listing": "https://payapi.market/api/canonicalhash-json-canonicalization-api",
+  "verified": true
+}
