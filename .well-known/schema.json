@@ -1,0 +1,35 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebAPI",
+  "name": "CanonicalHash",
+  "description": "Deterministic JSON hashing and structured extraction for AI agents. RFC 8785 canonicalization, SHA-256/512, and EIP-712 attestations.",
+  "provider": {
+    "@type": "Organization",
+    "name": "CanonicalHash",
+    "url": "https://github.com/mlartab/canonicalhash-api"
+  },
+  "documentation": "https://canonicalhash-production.up.railway.app/openapi.json",
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "JSON Canonicalization",
+      "price": "0.002",
+      "priceCurrency": "USD",
+      "url": "https://canonicalhash-production.up.railway.app/v1/canonicalize"
+    },
+    {
+      "@type": "Offer",
+      "name": "Batch Canonicalization",
+      "price": "0.01",
+      "priceCurrency": "USD",
+      "url": "https://canonicalhash-production.up.railway.app/v1/canonicalize/batch"
+    },
+    {
+      "@type": "Offer",
+      "name": "Action Receipts",
+      "price": "0.001",
+      "priceCurrency": "USD",
+      "url": "https://canonicalhash-production.up.railway.app/v1/receipt"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# agents.txt
+# Welcome, agents. This API requires x402 payments.
+User-Agent: *
+Allow: /
