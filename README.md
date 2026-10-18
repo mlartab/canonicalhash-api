@@ -393,17 +393,31 @@ You can send either the full paid response or just the `attestation` object. Inv
 | llms.txt | `https://canonicalhash-production.up.railway.app/llms.txt` |
 | Signer pubkey | `https://canonicalhash-production.up.railway.app/.well-known/pubkey.json` |
 
-**PayAPI MCP server** — paste into Claude Desktop or Cursor:
+### 🧠 Native MCP Server
+
+CanonicalHash is an official Model Context Protocol (MCP) server. AI agents using Claude Desktop, Cursor, or Windsurf can autonomously call our tools and pay per request.
+
+Paste this into your MCP client configuration:
 
 ```json
 {
   "mcpServers": {
-    "payapi": {
-      "url": "https://payapi.market/mcp"
+    "canonicalhash": {
+      "url": "https://canonicalhash-production.up.railway.app/mcp"
     }
   }
 }
 ```
+
+**Available MCP Tools:**
+
+| Tool | Price | Description |
+|------|-------|-------------|
+| `canonicalize` | $0.002 | Hash and sign JSON |
+| `batch_canonicalize` | $0.01 | Hash up to 1,000 payloads |
+| `create_receipt` | $0.001 | Generate a tamper-evident receipt |
+| `structure_extraction` | $0.005 | Extract JSON from messy text |
+| `verify_attestation` | **FREE** | Verify any EIP-712 signature |
 
 ---
 
